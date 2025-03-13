@@ -29,23 +29,17 @@
 
 ## 🚀 セットアップ手順
 
-1. リポジトリのクローン:
-```bash
-git clone [リポジトリURL]
-cd kodomo
-```
-
-2. 依存関係のインストール:
+依存関係のインストール：
 ```bash
 npm install
 ```
 
-3. 開発サーバーの起動:
+開発サーバーの起動：
 ```bash
 npm run dev
 ```
 
-4. ブラウザで http://localhost:3000 を開く
+ブラウザで http://localhost:3000 を開く
 
 ## 📂 ディレクトリ構造
 
