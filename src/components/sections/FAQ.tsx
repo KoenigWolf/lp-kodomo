@@ -1,9 +1,16 @@
 "use client";
 
+// -------------------------------------------------
+// ライブラリ・フックのインポート
+// -------------------------------------------------
 import { useState, useRef } from "react";
 import { motion, useInView, AnimatePresence } from "framer-motion";
 import { ChevronDown } from "lucide-react";
 
+// -------------------------------------------------
+// FAQデータ定義
+// -------------------------------------------------
+// 各FAQ項目は、ID、質問、回答を持つオブジェクトとして定義
 const faqs = [
   {
     id: "support",
@@ -37,18 +44,32 @@ const faqs = [
   },
 ];
 
+// -------------------------------------------------
+// FAQコンポーネント（メイン）
+// -------------------------------------------------
+/*
+  FAQコンポーネントは、FAQセクション全体のレイアウトと
+  各FAQ項目の表示を担当します。
+  ・useInViewで、スクロール時にアニメーションをトリガー
+  ・useStateで、展開中のFAQ項目を管理
+*/
 export default function FAQ() {
+  // 現在展開しているFAQ項目のインデックス（初期値はnull＝全項目折りたたみ状態）
   const [activeIndex, setActiveIndex] = useState<number | null>(null);
-  const ref = useRef(null);
-  const isInView = useInView(ref, { once: true, amount: 0.2 });
+  // FAQリスト全体のアニメーション用に参照を設定
+  const containerRef = useRef(null);
+  // コンテナが画面内に入ったらtrueに（初回のみ、20%表示された時点で発火）
+  const isInView = useInView(containerRef, { once: true, amount: 0.2 });
 
+  // FAQの開閉トグル関数：既に展開中なら閉じ、そうでなければ該当項目を展開
   const toggleFAQ = (index: number) => {
-    setActiveIndex(activeIndex === index ? null : index);
+    setActiveIndex(prevIndex => (prevIndex === index ? null : index));
   };
 
   return (
     <section id="faq" className="py-20 bg-white">
       <div className="container mx-auto px-4">
+        {/* FAQセクションのタイトルと説明 */}
         <div className="text-center mb-16">
           <motion.h2
             initial={{ opacity: 0, y: 20 }}
@@ -68,48 +89,78 @@ export default function FAQ() {
           </motion.p>
         </div>
 
-        <div ref={ref} className="max-w-3xl mx-auto">
+        {/* FAQリスト本体 */}
+        <div ref={containerRef} className="max-w-3xl mx-auto">
           {faqs.map((faq, index) => (
-            <motion.div
+            <FAQItem
               key={faq.id}
-              initial={{ opacity: 0, y: 20 }}
-              animate={isInView ? { opacity: 1, y: 0 } : {}}
-              transition={{ duration: 0.5, delay: 0.1 * index }}
-              className="mb-4"
-            >
-              <button
-                type="button"
-                onClick={() => toggleFAQ(index)}
-                className="flex justify-between items-center w-full p-5 bg-blue-50 hover:bg-blue-100 rounded-lg text-left transition-colors duration-200"
-                aria-expanded={activeIndex === index ? "true" : "false"}
-              >
-                <h3 className="text-lg font-semibold text-blue-800">{faq.question}</h3>
-                <ChevronDown
-                  className={`transition-transform duration-300 ${
-                    activeIndex === index ? "transform rotate-180" : ""
-                  }`}
-                  size={20}
-                />
-              </button>
-              <AnimatePresence>
-                {activeIndex === index && (
-                  <motion.div
-                    initial={{ opacity: 0, height: 0 }}
-                    animate={{ opacity: 1, height: "auto" }}
-                    exit={{ opacity: 0, height: 0 }}
-                    transition={{ duration: 0.3 }}
-                    className="overflow-hidden"
-                  >
-                    <div className="p-5 bg-white border border-blue-100 rounded-b-lg">
-                      <p className="text-gray-600">{faq.answer}</p>
-                    </div>
-                  </motion.div>
-                )}
-              </AnimatePresence>
-            </motion.div>
+              faq={faq}
+              index={index}
+              isActive={activeIndex === index}
+              onToggle={() => toggleFAQ(index)}
+              isInView={isInView}
+            />
           ))}
         </div>
       </div>
     </section>
   );
-} 
+}
+
+// -------------------------------------------------
+// FAQItem コンポーネント
+// -------------------------------------------------
+/*
+  FAQItemは各FAQの質問と回答を表示します。
+  ・質問部分はボタンになっており、クリックで回答の開閉を切り替えます。
+  ・framer-motionのAnimatePresenceとmotion.divを利用して、回答部分の展開/折りたたみをアニメーション化しています。
+*/
+interface FAQItemProps {
+  faq: { id: string; question: string; answer: string };
+  index: number;
+  isActive: boolean;
+  onToggle: () => void;
+  isInView: boolean;
+}
+
+function FAQItem({ faq, index, isActive, onToggle, isInView }: FAQItemProps) {
+  return (
+    <motion.div
+      initial={{ opacity: 0, y: 20 }}
+      animate={isInView ? { opacity: 1, y: 0 } : {}}
+      transition={{ duration: 0.5, delay: 0.1 * index }}
+      className="mb-4"
+    >
+      {/* FAQ見出しボタン */}
+      <button
+        type="button"
+        onClick={onToggle}
+        className="flex justify-between items-center w-full p-5 bg-blue-50 hover:bg-blue-100 rounded-lg text-left transition-colors duration-200"
+        aria-expanded={isActive ? "true" : "false"}
+      >
+        <h3 className="text-lg font-semibold text-blue-800">{faq.question}</h3>
+        <ChevronDown
+          className={`transition-transform duration-300 ${isActive ? "transform rotate-180" : ""}`}
+          size={20}
+        />
+      </button>
+
+      {/* FAQ回答の展開部分 */}
+      <AnimatePresence>
+        {isActive && (
+          <motion.div
+            initial={{ opacity: 0, height: 0 }}
+            animate={{ opacity: 1, height: "auto" }}
+            exit={{ opacity: 0, height: 0 }}
+            transition={{ duration: 0.3 }}
+            className="overflow-hidden"
+          >
+            <div className="p-5 bg-white border border-blue-100 rounded-b-lg">
+              <p className="text-gray-600">{faq.answer}</p>
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+    </motion.div>
+  );
+}
